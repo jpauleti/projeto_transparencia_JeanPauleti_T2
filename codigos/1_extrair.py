@@ -22,15 +22,37 @@ import config
 # ---------------------------------------------------------------------------
 def baixar_zip():
     """Baixa o arquivo ZIP do Google Drive caso ele ainda não exista."""
-    pass
+
+    if config.CAMINHO_ZIP.exists():
+        print("[1/4] Arquivo ZIP encontrado:", config.NOME_ZIP)
+        return
+
+    print("[1/4] Arquivo ZIP não encontrado.")
+    print("      Baixando do Google Drive...")
+
+    url = f"https://drive.google.com/uc?id={config.DRIVE_FILE_ID}"
+
+    gdown.download(
+        url,
+        str(config.CAMINHO_ZIP),
+        quiet=False,
+    )
+
+    print("      Download concluído.")
 
 
 # ---------------------------------------------------------------------------
 # Passo 2 - Localizar o arquivo ZIP
 # ---------------------------------------------------------------------------
 def localizar_zip():
-    """Localiza e retorna o caminho do arquivo ZIP na pasta data."""
-    pass
+    """Retorna o caminho do arquivo ZIP."""
+
+    if not config.CAMINHO_ZIP.exists():
+        raise FileNotFoundError(
+            f"Arquivo não encontrado: {config.CAMINHO_ZIP}"
+        )
+
+    return config.CAMINHO_ZIP
 
 
 # ---------------------------------------------------------------------------
@@ -45,8 +67,23 @@ def carregar_csv(conexao, zip_aberto, nome_csv, tabela):
 # Programa principal
 # ---------------------------------------------------------------------------
 def main():
-    """Executa o processo de extração e carga da camada RAW."""
-    pass
+
+    print("=== FASE 1: EXTRACAO + CAMADA RAW ===")
+
+    try:
+
+        baixar_zip()
+
+        caminho_zip = localizar_zip()
+
+        print()
+        print("Arquivo localizado com sucesso:")
+        print(caminho_zip)
+
+    except Exception as erro:
+
+        print("[ERRO]", erro)
+        raise
 
 
 if __name__ == "__main__":
