@@ -13,7 +13,7 @@ from pathlib import Path
 PASTA_RAIZ = Path(__file__).resolve().parent
 # onde o .zip e os .csv ficam (ignorada pelo Git)
 PASTA_DADOS = PASTA_RAIZ / "data"
-
+PASTA_DADOS.mkdir(parents=True, exist_ok=True)
 
 # ---------------------------------------------------------------------------
 # Leitura simples do arquivo .env (sem biblioteca externa)
@@ -54,9 +54,10 @@ ANO = "2025"
 
 # ---- De onde baixar o .zip ----
 DRIVE_FILE_ID = "1Sru-TYSYo-cn-L9WW2DUwhyIUdkM3fIe"
+NOME_ZIP = f"viagens_{ANO}.zip"
+CAMINHO_ZIP = PASTA_DADOS / NOME_ZIP
 
 # Tamanho do bloco de leitura/insercao (numero de linhas por vez).
-
 TAMANHO_BLOCO = 50_000
 
 # ---------------------------------------------------------------------------
