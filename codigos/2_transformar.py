@@ -21,6 +21,10 @@ LIMPAR_SILVER = [
     "DELETE FROM silver_viagem",
 ]
 
+# ===============================================
+# silver_viagem
+# ===============================================
+
 # Query para copiar raw_viagem para silver_viagem
 
 SQL_VIAGEM = """
@@ -115,6 +119,47 @@ SET
         DATEDIFF(data_fim, data_inicio)
 """
 
+# ===========================================================
+# silver_pagamento
+# ===========================================================
+
+# Query para copiar raw_pagamento para silver_pagamento
+
+SQL_PAGAMENTO = """
+INSERT INTO silver_pagamento (
+    id_viagem,
+    num_proposta,
+    nome_orgao_pagador,
+    nome_ug_pagadora,
+    tipo_pagamento,
+    valor
+)
+SELECT
+    NULLIF(TRIM(id_viagem), ''),
+    NULLIF(TRIM(num_proposta), ''),
+    NULLIF(TRIM(nome_orgao_pagador), ''),
+    NULLIF(TRIM(nome_ug_pagadora), ''),
+    NULLIF(TRIM(tipo_pagamento), ''),
+
+    CAST(
+        REPLACE(
+            REPLACE(
+                NULLIF(TRIM(valor), ''),
+                '.',
+                ''
+            ),
+            ',',
+            '.'
+        ) AS DECIMAL(10,2)
+    )
+
+FROM raw_pagamento
+WHERE id_viagem IN (
+    SELECT id_viagem
+    FROM silver_viagem
+)
+"""
+
 def main():
 
     print("=== FASE 2: TRANSFORMACAO + CAMADA SILVER ===")
@@ -125,20 +170,25 @@ def main():
 
         conexao = banco.conectar()
 
-        print("[1/3] Limpando tabelas SILVER...")
+        print("[1/4] Limpando tabelas SILVER...")
 
         for comando in LIMPAR_SILVER:
             banco.executar(conexao, comando)
 
-        print("[2/3] Carregando silver_viagem...")
+        print("[2/4] Carregando silver_viagem...")
         banco.executar(conexao, SQL_VIAGEM)
         print("      silver_viagem carregada.")
 
-        print("[3/3] Calculando valor_total e duracao_dias...")
+        print("[3/4] Calculando valor_total e duracao_dias...")
         banco.executar(conexao, SQL_CALC_VIAGEM)
         print("      Colunas calculadas.")
 
+        print("[4/4] Carregando silver_pagamento...")
+        banco.executar(conexao, SQL_PAGAMENTO)
+        print("      silver_pagamento carregada.")
+        
         print("=== Transformacao de silver_viagem concluida! ===")
+
 
     except Exception as erro:
 
