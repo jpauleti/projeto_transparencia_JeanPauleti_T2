@@ -160,6 +160,131 @@ WHERE id_viagem IN (
 )
 """
 
+# ===========================================================
+# silver_passagem
+# ===========================================================
+
+SQL_PASSAGEM = """
+INSERT INTO silver_passagem (
+    id_viagem,
+    meio_transporte,
+    pais_origem_ida,
+    uf_origem_ida,
+    cidade_origem_ida,
+    pais_destino_ida,
+    uf_destino_ida,
+    cidade_destino_ida,
+    valor_passagem,
+    taxa_servico,
+    data_emissao
+)
+SELECT
+    NULLIF(TRIM(id_viagem), ''),
+    NULLIF(TRIM(meio_transporte), ''),
+    NULLIF(TRIM(pais_origem_ida), ''),
+    NULLIF(TRIM(uf_origem_ida), ''),
+    NULLIF(TRIM(cidade_origem_ida), ''),
+    NULLIF(TRIM(pais_destino_ida), ''),
+    NULLIF(TRIM(uf_destino_ida), ''),
+    NULLIF(TRIM(cidade_destino_ida), ''),
+
+    CAST(
+        REPLACE(
+            REPLACE(
+                NULLIF(TRIM(valor_passagem), ''),
+                '.',
+                ''
+            ),
+            ',',
+            '.'
+        ) AS DECIMAL(10,2)
+    ),
+
+    CAST(
+        REPLACE(
+            REPLACE(
+                NULLIF(TRIM(taxa_servico), ''),
+                '.',
+                ''
+            ),
+            ',',
+            '.'
+        ) AS DECIMAL(10,2)
+    ),
+
+    STR_TO_DATE(
+        NULLIF(TRIM(data_emissao), ''),
+        '%d/%m/%Y'
+    )
+
+FROM raw_passagem
+WHERE id_viagem IN (
+    SELECT id_viagem
+    FROM silver_viagem
+)
+"""
+
+# ===========================================================
+# silver_trecho
+# ===========================================================
+
+SQL_TRECHO = """
+INSERT INTO silver_trecho (
+    id_viagem,
+    sequencia_trecho,
+    origem_data,
+    origem_uf,
+    origem_cidade,
+    destino_data,
+    destino_uf,
+    destino_cidade,
+    meio_transporte,
+    numero_diarias
+)
+SELECT
+    NULLIF(TRIM(id_viagem), ''),
+
+    CAST(
+        NULLIF(TRIM(sequencia_trecho), '')
+        AS UNSIGNED
+    ),
+
+    STR_TO_DATE(
+        NULLIF(TRIM(origem_data), ''),
+        '%d/%m/%Y'
+    ),
+
+    NULLIF(TRIM(origem_uf), ''),
+    NULLIF(TRIM(origem_cidade), ''),
+
+    STR_TO_DATE(
+        NULLIF(TRIM(destino_data), ''),
+        '%d/%m/%Y'
+    ),
+
+    NULLIF(TRIM(destino_uf), ''),
+    NULLIF(TRIM(destino_cidade), ''),
+    NULLIF(TRIM(meio_transporte), ''),
+
+    CAST(
+        REPLACE(
+            REPLACE(
+                NULLIF(TRIM(numero_diarias), ''),
+                '.',
+                ''
+            ),
+            ',',
+            '.'
+        ) AS DECIMAL(10,2)
+    )
+
+FROM raw_trecho
+WHERE id_viagem IN (
+    SELECT id_viagem
+    FROM silver_viagem
+)
+"""
+
 def main():
 
     print("=== FASE 2: TRANSFORMACAO + CAMADA SILVER ===")
@@ -170,24 +295,30 @@ def main():
 
         conexao = banco.conectar()
 
-        print("[1/4] Limpando tabelas SILVER...")
+        print("[1/6] Limpando tabelas SILVER...")
 
         for comando in LIMPAR_SILVER:
             banco.executar(conexao, comando)
 
-        print("[2/4] Carregando silver_viagem...")
+        print("[2/6] Carregando silver_viagem...")
         banco.executar(conexao, SQL_VIAGEM)
         print("      silver_viagem carregada.")
 
-        print("[3/4] Calculando valor_total e duracao_dias...")
+        print("[3/6] Calculando valor_total e duracao_dias...")
         banco.executar(conexao, SQL_CALC_VIAGEM)
         print("      Colunas calculadas.")
 
-        print("[4/4] Carregando silver_pagamento...")
+        print("[4/6] Carregando silver_pagamento...")
         banco.executar(conexao, SQL_PAGAMENTO)
         print("      silver_pagamento carregada.")
         
-        print("=== Transformacao de silver_viagem concluida! ===")
+        print("[5/6] Carregando silver_passagem...")
+        banco.executar(conexao, SQL_PASSAGEM)
+        print("      silver_passagem carregada.")
+
+        print("[6/6] Carregando silver_trecho...")
+        banco.executar(conexao, SQL_TRECHO)
+        print("      silver_trecho carregada.")
 
 
     except Exception as erro:
