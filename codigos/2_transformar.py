@@ -285,6 +285,54 @@ WHERE id_viagem IN (
 )
 """
 
+# ===========================================================
+# Validacao de duplicidades
+# ===========================================================
+
+# silver_viagem: id_viagem deve identificar uma única viagem.
+SQL_DUPLICADOS_VIAGEM = """
+SELECT
+    id_viagem,
+    COUNT(*) AS quantidade
+FROM silver_viagem
+GROUP BY id_viagem
+HAVING COUNT(*) > 1
+ORDER BY quantidade DESC, id_viagem
+"""
+
+def validar_duplicidades(conexao):
+    """
+    Verifica duplicidades nas tabelas silver_viagem e silver_passagem.
+
+    """
+
+    duplicados_viagem = banco.consultar(
+        conexao,
+        SQL_DUPLICADOS_VIAGEM
+    )
+
+    if not duplicados_viagem:
+        print(
+            "[OK] silver_viagem: "
+            "nenhum id_viagem duplicado."
+        )
+
+    else:
+        print(
+            "[ATENCAO] silver_viagem: "
+            f"{len(duplicados_viagem)} id(s) duplicado(s)."
+        )
+
+        print("Exemplos encontrados:")
+
+        for id_viagem, quantidade in duplicados_viagem[:10]:
+            print(
+                f"    id_viagem={id_viagem} "
+                f"| quantidade={quantidade}"
+            )
+
+    return duplicados_viagem
+
 def main():
 
     print("=== FASE 2: TRANSFORMACAO + CAMADA SILVER ===")
@@ -295,30 +343,33 @@ def main():
 
         conexao = banco.conectar()
 
-        print("[1/6] Limpando tabelas SILVER...")
+        print("[1/7] Limpando tabelas SILVER...")
 
         for comando in LIMPAR_SILVER:
             banco.executar(conexao, comando)
 
-        print("[2/6] Carregando silver_viagem...")
+        print("[2/7] Carregando silver_viagem...")
         banco.executar(conexao, SQL_VIAGEM)
         print("      silver_viagem carregada.")
 
-        print("[3/6] Calculando valor_total e duracao_dias...")
+        print("[3/7] Calculando valor_total e duracao_dias...")
         banco.executar(conexao, SQL_CALC_VIAGEM)
         print("      Colunas calculadas.")
 
-        print("[4/6] Carregando silver_pagamento...")
+        print("[4/7] Carregando silver_pagamento...")
         banco.executar(conexao, SQL_PAGAMENTO)
         print("      silver_pagamento carregada.")
-        
-        print("[5/6] Carregando silver_passagem...")
+
+        print("[5/7] Carregando silver_passagem...")
         banco.executar(conexao, SQL_PASSAGEM)
         print("      silver_passagem carregada.")
 
-        print("[6/6] Carregando silver_trecho...")
+        print("[6/7] Carregando silver_trecho...")
         banco.executar(conexao, SQL_TRECHO)
         print("      silver_trecho carregada.")
+
+        print("[7/7] Validando duplicidades...")
+        validar_duplicidades(conexao)
 
 
     except Exception as erro:
