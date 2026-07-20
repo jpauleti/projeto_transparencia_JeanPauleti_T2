@@ -36,18 +36,6 @@ Para que esses dados possam apoiar decisões e auditorias, é necessário:
 
 ## Arquitetura da solução
 
-```mermaid
-flowchart LR
-    A[Google Drive<br>arquivo ZIP] --> B[1_extrair.py]
-    B --> C[(Camada Raw<br>4 tabelas)]
-    C --> D[2_transformar.py]
-    D --> E[(Camada Silver<br>4 tabelas tipadas)]
-    E --> F[3_analise.ipynb]
-    F --> G[(Tabela Gold)]
-    F --> H[(View Gold)]
-    F --> I[Consultas e gráficos]
-```
-
 ### Camada Raw
 
 Preserva fielmente os quatro arquivos CSV. Todas as colunas permanecem como `VARCHAR`, sem alterações no conteúdo original.
@@ -83,8 +71,6 @@ Foram criadas no MySQL:
 
 - tabela `gold_pagamentos_orgao`;
 - view `vw_gold_pagamentos_orgao`.
-
-A tabela agregada utiliza `JOIN`, `GROUP BY`, `COUNT`, `COUNT DISTINCT`, `SUM` e `AVG`.
 
 ## Tecnologias e técnicas utilizadas
 
